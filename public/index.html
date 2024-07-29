@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tree Visualization</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Tree Visualization</h1>
+        </header>
+        <div id="controls">
+            <input type="number" id="nodeValue" placeholder="Enter node value">
+            <button onclick="addNode()">Add Node</button>
+            <button onclick="deleteNode()">Delete Node</button>
+            <select id="traversalAlgorithm">
+                <option value="pre-order">Pre-order</option>
+                <option value="in-order">In-order</option>
+                <option value="post-order">Post-order</option>
+            </select>
+            <button onclick="traverseTree()">Traverse Tree</button>
+        </div>
+        <div id="tree"></div>
+        <div id="traversalResult"></div>
+    </div>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
