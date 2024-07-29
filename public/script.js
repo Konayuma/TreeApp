@@ -69,13 +69,17 @@ function renderTree() {
     treeData = buildTree(nodeValues);
 
     const svg = d3.select("#tree").html("")
-        .append("svg")
-        .attr("width", document.getElementById('tree').clientWidth)
-        .attr("height", document.getElementById('tree').clientHeight);
+        .append("svg");
 
     const root = d3.hierarchy(treeData, d => (d ? [d.left, d.right].filter(x => x !== null) : []));
-    const treeLayout = d3.tree().size([document.getElementById('tree').clientWidth, document.getElementById('tree').clientHeight - 20]);
+    const treeLayout = d3.tree().nodeSize([40, 40]);
     treeLayout(root);
+
+    const width = root.descendants().reduce((max, node) => Math.max(max, node.x), 0) + 40;
+    const height = root.descendants().reduce((max, node) => Math.max(max, node.y), 0) + 40;
+
+    svg.attr("width", width)
+        .attr("height", height);
 
     svg.selectAll('line')
         .data(root.links())
