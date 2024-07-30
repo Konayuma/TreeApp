@@ -12,7 +12,7 @@
             <h1>Tree Visualization</h1>
         </header>
         <div id="controls">
-            <input type="number" id="nodeValue" placeholder="Enter node value">
+            <input type="number" id="nodeValue" placeholder="Enter node value" min="0">
             <button onclick="addNode()">Add Node</button>
             <button onclick="deleteNode()">Delete Node</button>
             <select id="traversalAlgorithm">
@@ -22,7 +22,9 @@
             </select>
             <button onclick="traverseTree()">Traverse Tree</button>
         </div>
-        <div id="tree"></div>
+        <div id="treeContainer">
+            <div id="tree"></div>
+        </div>
         <div id="traversalResult"></div>
     </div>
     <script src="https://d3js.org/d3.v6.min.js"></script>

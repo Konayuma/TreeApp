@@ -22,15 +22,6 @@ function addNode() {
     }
 }
 
-function deleteNode() {
-    if (selectedNode) {
-        nodeValues = nodeValues.filter(value => value !== selectedNode.value);
-        treeData = buildTree(nodeValues);
-        selectedNode = null;
-        renderTree();
-    }
-}
-
 function traverseTree() {
     const algorithm = document.getElementById('traversalAlgorithm').value;
     if (treeData) {
@@ -69,17 +60,13 @@ function renderTree() {
     treeData = buildTree(nodeValues);
 
     const svg = d3.select("#tree").html("")
-        .append("svg");
+        .append("svg")
+        .attr("width", "100%")
+        .attr("height", "100%");
 
     const root = d3.hierarchy(treeData, d => (d ? [d.left, d.right].filter(x => x !== null) : []));
-    const treeLayout = d3.tree().nodeSize([40, 40]);
+    const treeLayout = d3.tree().size([document.getElementById('tree').clientWidth, document.getElementById('tree').clientHeight]);
     treeLayout(root);
-
-    const width = root.descendants().reduce((max, node) => Math.max(max, node.x), 0) + 40;
-    const height = root.descendants().reduce((max, node) => Math.max(max, node.y), 0) + 40;
-
-    svg.attr("width", width)
-        .attr("height", height);
 
     svg.selectAll('line')
         .data(root.links())
