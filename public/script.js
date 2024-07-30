@@ -22,6 +22,16 @@ function addNode() {
     }
 }
 
+function deleteNode() {
+    const nodeValue = document.getElementById('nodeValue').value;
+    if (nodeValue) {
+        removeNode(parseInt(nodeValue));
+        document.getElementById('nodeValue').value = '';
+        selectedNode = null;
+        renderTree();
+    }
+}
+
 function traverseTree() {
     const algorithm = document.getElementById('traversalAlgorithm').value;
     if (treeData) {
@@ -62,10 +72,15 @@ function renderTree() {
     const svg = d3.select("#tree").html("")
         .append("svg")
         .attr("width", "100%")
-        .attr("height", "100%");
+        .attr("height", 400);
 
     const root = d3.hierarchy(treeData, d => (d ? [d.left, d.right].filter(x => x !== null) : []));
-    const treeLayout = d3.tree().size([document.getElementById('tree').clientWidth, document.getElementById('tree').clientHeight]);
+    const treeLayout = d3.tree().size([document.getElementById('tree').clientWidth - 40, 400]);
+
+    root.descendants().forEach(d => {
+        d.y = d.depth * 100;
+    });
+
     treeLayout(root);
 
     svg.selectAll('line')
@@ -156,4 +171,8 @@ function addChildNode(parent, value) {
     }
 
     nodeValues.push(value);
+}
+
+function removeNode(value) {
+    nodeValues = nodeValues.filter(v => v !== value);
 }
