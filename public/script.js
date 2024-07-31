@@ -25,10 +25,11 @@ function addNode() {
 function deleteNode() {
     const nodeValue = document.getElementById('nodeValue').value;
     if (nodeValue) {
-        removeNode(parseInt(nodeValue));
-        document.getElementById('nodeValue').value = '';
-        selectedNode = null;
-        renderTree();
+        const index = nodeValues.indexOf(parseInt(nodeValue));
+        if (index !== -1) {
+            nodeValues.splice(index, 1);
+            renderTree();
+        }
     }
 }
 
@@ -69,19 +70,31 @@ function postOrderTraversal(node) {
 function renderTree() {
     treeData = buildTree(nodeValues);
 
-    const svg = d3.select("#tree").html("")
+    if (!treeData) {
+        console.log("Tree data is empty.");
+        return;
+    }
+
+    const svgContainer = d3.select("#tree").html("")
         .append("svg")
         .attr("width", "100%")
-        .attr("height", 400);
+        .attr("height", "100%");
+
+    const margin = { top: 20, right: 40, bottom: 20, left: 40 };
+    const width = document.getElementById('tree').clientWidth - margin.left - margin.right;
+    const height = 400 - margin.top - margin.bottom;
+
+    console.log("SVG Container Dimensions:", width, height);
+
+    const svg = svgContainer
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
 
     const root = d3.hierarchy(treeData, d => (d ? [d.left, d.right].filter(x => x !== null) : []));
-    const treeLayout = d3.tree().size([document.getElementById('tree').clientWidth - 40, 400]);
-
-    root.descendants().forEach(d => {
-        d.y = d.depth * 100;
-    });
-
+    const treeLayout = d3.tree().size([width, height]);
     treeLayout(root);
+
+    console.log("Root Data:", root);
 
     svg.selectAll('line')
         .data(root.links())
@@ -116,6 +129,8 @@ function renderTree() {
         .attr('dy', 4)
         .attr('text-anchor', 'middle')
         .text(d => d.data.value);
+
+    console.log("Tree Rendered");
 }
 
 function buildTree(values) {
@@ -171,8 +186,4 @@ function addChildNode(parent, value) {
     }
 
     nodeValues.push(value);
-}
-
-function removeNode(value) {
-    nodeValues = nodeValues.filter(v => v !== value);
 }
