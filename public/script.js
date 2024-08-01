@@ -1,6 +1,7 @@
 let treeData = null;
 let nodeValues = [];
 let selectedNode = null;
+let draggingNode = null;
 
 document.getElementById('nodeValue').addEventListener('input', function() {
     if (this.value < 0) {
@@ -9,31 +10,60 @@ document.getElementById('nodeValue').addEventListener('input', function() {
 });
 
 function addNode() {
+    const nodeLabel = document.getElementById('nodeLabel').value;
     const nodeValue = document.getElementById('nodeValue').value;
     if (nodeValue) {
-        if (selectedNode) {
-            addChildNode(selectedNode, parseInt(nodeValue));
-        } else {
-            nodeValues.push(parseInt(nodeValue));
-        }
+        nodeValues.push({ label: nodeLabel, value: parseInt(nodeValue) });
+        document.getElementById('nodeLabel').value = '';
         document.getElementById('nodeValue').value = '';
         selectedNode = null;
+        treeData = buildTree(nodeValues);
         renderTree();
+        updateStatistics();
     }
 }
 
 function deleteNode() {
-    const nodeValue = document.getElementById('nodeValue').value;
-    if (nodeValue) {
-        const index = nodeValues.indexOf(parseInt(nodeValue));
-        if (index !== -1) {
-            nodeValues.splice(index, 1);
-            renderTree();
-        }
+    if (selectedNode) {
+        nodeValues = nodeValues.filter(node => node.value !== selectedNode.value);
+        selectedNode = null;
+        treeData = buildTree(nodeValues);
+        renderTree();
+        updateStatistics();
+        document.getElementById('traversalResult').textContent = '';
+        document.getElementById('subtreeStats').innerText = '';
+        document.getElementById('subtreeWarning').classList.add('hidden');
+    } else {
+        alert('Please select a node to delete.');
     }
 }
 
-function traverseTree() {
+function buildTree(values) {
+    if (values.length === 0) return null;
+
+    values.sort((a, b) => a.value - b.value);
+
+    function buildBalancedBST(start, end) {
+        if (start > end) return null;
+
+        const mid = Math.floor((start + end) / 2);
+        const node = { value: values[mid].value, label: values[mid].label, left: null, right: null };
+        node.left = buildBalancedBST(start, mid - 1);
+        node.right = buildBalancedBST(mid + 1, end);
+        return node;
+    }
+
+    return buildBalancedBST(0, values.length - 1);
+}
+
+function checkNodeStructure(node) {
+    if (!node) return;
+    console.log('Node:', node.value, 'Left:', node.left, 'Right:', node.right);
+    checkNodeStructure(node.left);
+    checkNodeStructure(node.right);
+}
+
+function traverseTree(stepByStep = false) {
     const algorithm = document.getElementById('traversalAlgorithm').value;
     if (treeData) {
         let result = [];
@@ -48,32 +78,40 @@ function traverseTree() {
                 result = postOrderTraversal(treeData);
                 break;
         }
-        document.getElementById('traversalResult').textContent = `Traversal result: ${result.join(', ')}`;
+        if (result.length === 0) {
+            console.warn('Traversal resulted in an empty list. Check tree structure and traversal functions.');
+        } else {
+            console.log('Traversal result:', result.map(node => node.label || node.value));
+        }
+
+        if (stepByStep) {
+            highlightNodesStepByStep(result);
+        } else {
+            document.getElementById('traversalResult').textContent = `Traversal result: ${result.map(node => node.label || node.value).join(', ')}`;
+        }
+    } else {
+        console.warn('No tree data available for traversal.');
     }
 }
 
 function preOrderTraversal(node) {
     if (node == null) return [];
-    return [node.value].concat(preOrderTraversal(node.left), preOrderTraversal(node.right));
+    console.log('Visiting node:', node.value);
+    return [node].concat(preOrderTraversal(node.left), preOrderTraversal(node.right));
 }
 
 function inOrderTraversal(node) {
     if (node == null) return [];
-    return inOrderTraversal(node.left).concat(node.value, inOrderTraversal(node.right));
+    return inOrderTraversal(node.left).concat(node, inOrderTraversal(node.right));
 }
 
 function postOrderTraversal(node) {
     if (node == null) return [];
-    return postOrderTraversal(node.left).concat(postOrderTraversal(node.right), node.value);
+    return postOrderTraversal(node.left).concat(postOrderTraversal(node.right), node);
 }
 
 function renderTree() {
-    treeData = buildTree(nodeValues);
-
-    if (!treeData) {
-        console.log("Tree data is empty.");
-        return;
-    }
+    if (!treeData) return;
 
     const svgContainer = d3.select("#tree").html("")
         .append("svg")
@@ -84,8 +122,6 @@ function renderTree() {
     const width = document.getElementById('tree').clientWidth - margin.left - margin.right;
     const height = 400 - margin.top - margin.bottom;
 
-    console.log("SVG Container Dimensions:", width, height);
-
     const svg = svgContainer
         .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
@@ -94,9 +130,7 @@ function renderTree() {
     const treeLayout = d3.tree().size([width, height]);
     treeLayout(root);
 
-    console.log("Root Data:", root);
-
-    svg.selectAll('line')
+    const link = svg.selectAll('line')
         .data(root.links())
         .enter()
         .append('line')
@@ -106,12 +140,18 @@ function renderTree() {
         .attr('y2', d => d.target.y)
         .attr('stroke', 'black');
 
-    svg.selectAll('circle')
+    const node = svg.selectAll('g.node')
         .data(root.descendants())
         .enter()
-        .append('circle')
-        .attr('cx', d => d.x)
-        .attr('cy', d => d.y)
+        .append('g')
+        .attr('class', 'node')
+        .attr('transform', d => `translate(${d.x},${d.y})`)
+        .call(d3.drag()
+            .on('start', dragstarted)
+            .on('drag', dragged)
+            .on('end', dragended));
+
+    node.append('circle')
         .attr('r', 20)
         .attr('fill', 'lightblue')
         .on('click', function(event, d) {
@@ -120,70 +160,76 @@ function renderTree() {
             d3.select(this).attr('stroke', 'red');
         });
 
-    svg.selectAll('text')
-        .data(root.descendants())
-        .enter()
-        .append('text')
-        .attr('x', d => d.x)
-        .attr('y', d => d.y)
+    node.append('text')
         .attr('dy', 4)
         .attr('text-anchor', 'middle')
-        .text(d => d.data.value);
-
-    console.log("Tree Rendered");
+        .text(d => d.data.label || d.data.value);
 }
 
-function buildTree(values) {
-    if (values.length === 0) return null;
-
-    let root = { value: values[0], left: null, right: null };
-
-    for (let i = 1; i < values.length; i++) {
-        let currentNode = root;
-        let newNode = { value: values[i], left: null, right: null };
-
-        while (true) {
-            if (values[i] < currentNode.value) {
-                if (currentNode.left === null) {
-                    currentNode.left = newNode;
-                    break;
-                } else {
-                    currentNode = currentNode.left;
-                }
-            } else {
-                if (currentNode.right === null) {
-                    currentNode.right = newNode;
-                    break;
-                } else {
-                    currentNode = currentNode.right;
-                }
-            }
-        }
-    }
-
-    return root;
+function dragstarted(event, d) {
+    draggingNode = d;
+    d3.select(this).select('circle').attr('stroke', 'orange');
 }
 
-function addChildNode(parent, value) {
-    let newNode = { value: value, left: null, right: null };
+function dragged(event, d) {
+    d.x = event.x;
+    d.y = event.y;
+    d3.select(this).attr('transform', `translate(${d.x},${d.y})`);
+    d3.selectAll('line')
+        .attr('x1', l => l.source.x)
+        .attr('y1', l => l.source.y)
+        .attr('x2', l => l.target.x)
+        .attr('y2', l => l.target.y);
+}
 
-    while (true) {
-        if (value < parent.value) {
-            if (parent.left === null) {
-                parent.left = newNode;
-                break;
-            } else {
-                parent = parent.left;
-            }
+function dragended(event, d) {
+    d3.select(this).select('circle').attr('stroke', 'black');
+    draggingNode = null;
+}
+
+function highlightNodesStepByStep(nodes) {
+    const nodeElems = d3.selectAll('g.node');
+    let index = 0;
+
+    function highlightStep() {
+        if (index < nodes.length) {
+            nodeElems.select('circle')
+                .attr('fill', (d, i) => d.data === nodes[index] ? 'yellow' : 'lightblue');
+            index++;
+            setTimeout(highlightStep, 1000); // Adjust delay as needed
         } else {
-            if (parent.right === null) {
-                parent.right = newNode;
-                break;
-            } else {
-                parent = parent.right;
-            }
+            // Reset all nodes to original color after traversal
+            nodeElems.select('circle').attr('fill', 'lightblue');
         }
     }
 
-    nodeValues.push(value);
+    highlightStep();
+}
+
+function updateStatistics() {
+    const stats = calculateStatistics(treeData);
+    document.getElementById('nodeStats').innerText = `Total Nodes: ${stats.totalNodes}, Leaf Nodes: ${stats.leafNodes}, Depth: ${stats.depth}`;
+}
+
+function calculateStatistics(node) {
+    if (node === null) return { totalNodes: 0, leafNodes: 0, depth: 0 };
+
+    const leftStats = calculateStatistics(node.left);
+    const rightStats = calculateStatistics(node.right);
+
+    const totalNodes = 1 + leftStats.totalNodes + rightStats.totalNodes;
+    const leafNodes = (node.left === null && node.right === null) ? 1 : leftStats.leafNodes + rightStats.leafNodes;
+    const depth = 1 + Math.max(leftStats.depth, rightStats.depth);
+
+    return { totalNodes, leafNodes, depth };
+}
+
+function analyzeSubtree() {
+    if (selectedNode) {
+        document.getElementById('subtreeWarning').classList.add('hidden');
+        const stats = calculateStatistics(selectedNode);
+        document.getElementById('subtreeStats').innerText = `Subtree - Total Nodes: ${stats.totalNodes}, Leaf Nodes: ${stats.leafNodes}, Depth: ${stats.depth}`;
+    } else {
+        document.getElementById('subtreeWarning').classList.remove('hidden');
+    }
 }

@@ -7,11 +7,10 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="app">
-        <header>
-            <h1>Tree Visualization</h1>
-        </header>
+    <div class="container">
+        <h1>Tree Visualization</h1>
         <div id="controls">
+            <input type="text" id="nodeLabel" placeholder="Enter node label">
             <input type="number" id="nodeValue" placeholder="Enter node value" min="0">
             <button onclick="addNode()">Add Node</button>
             <button onclick="deleteNode()">Delete Node</button>
@@ -21,13 +20,16 @@
                 <option value="post-order">Post-order</option>
             </select>
             <button onclick="traverseTree()">Traverse Tree</button>
+            <button onclick="traverseTree(true)">Step-by-Step Traversal</button>
+            <button onclick="analyzeSubtree()">Analyze Subtree</button>
         </div>
-        <div id="treeContainer">
-            <div id="tree"></div>
-        </div>
+        <div id="tree"></div>
         <div id="traversalResult"></div>
+        <div id="nodeStats"></div>
+        <div id="subtreeStats"></div>
+        <div id="subtreeWarning" class="hidden">Please select a node to analyze.</div>
     </div>
-    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
