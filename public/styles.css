@@ -3,34 +3,93 @@ body {
     background-color: #f0f0f0;
     margin: 0;
     padding: 20px;
+    display: flex;
 }
 
 .container {
+    display: flex;
+    flex-direction: row;
     max-width: auto;
     margin: 0 auto;
     background: #fff;
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
 }
 
-h1 {
+#sidebar {
+    width: 170px;
+    border-right: 1px solid #ddd;
+    padding-right: 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.collapsible {
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    text-align: left;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.collapsible:hover {
+    background-color: #0056b3;
+}
+
+.content {
+    display: none;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fafafa;
+}
+
+#sidebar button,
+#controls button {
+    background-color: #073d77;
+    color: white;
+    cursor: pointer;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 5px 0;
+    font-size: 16px;
+    width: auto;
     text-align: center;
-    color: #007bff;
-    margin-bottom: 20px;
 }
 
-#controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 20px;
+#sidebar button:hover,
+#controls button:hover {
+    background-color: #0056b3;
+}
+
+#sidebar select,
+#controls select {
+    width: calc(100% - 20px);
+    margin: 5px 0;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+#main-content {
+    flex-grow: 1;
+    padding-left: 20px;
 }
 
 #controls input, 
 #controls select, 
 #controls button {
-    margin: 0 5px;
+    margin: 5px 0;
     padding: 10px;
     font-size: 16px;
     border-radius: 5px;
@@ -58,7 +117,8 @@ h1 {
 
 #traversalResult,
 #nodeStats,
-#subtreeStats {
+#subtreeStats,
+#saveLoadNotifications {
     margin-top: 20px;
     font-size: 16px;
     color: #333;

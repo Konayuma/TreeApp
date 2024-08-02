@@ -1,7 +1,17 @@
 let treeData = null;
 let nodeValues = [];
 let selectedNode = null;
+let history = []; // History of trees with names
 let draggingNode = null;
+
+// Load history from localStorage if available
+window.onload = () => {
+    const savedHistory = localStorage.getItem('treeHistory');
+    if (savedHistory) {
+        history = JSON.parse(savedHistory);
+        updateHistoryDropdown();
+    }
+};
 
 document.getElementById('nodeValue').addEventListener('input', function() {
     if (this.value < 0) {
@@ -36,6 +46,64 @@ function deleteNode() {
     } else {
         alert('Please select a node to delete.');
     }
+}// Function to handle collapsible sidebar
+document.querySelectorAll('.collapsible').forEach(button => {
+    button.addEventListener('click', function() {
+        const content = this.nextElementSibling;
+        if (content.style.display === "block") {
+            content.style.display = "none";
+        } else {
+            content.style.display = "block";
+        }
+    });
+});
+
+// Function to show notifications
+function showNotification(message) {
+    const notificationElement = document.getElementById('saveLoadNotifications');
+    notificationElement.textContent = message;
+    setTimeout(() => {
+        notificationElement.textContent = '';
+    }, 3000);
+}
+
+
+// Save Tree function
+function saveTree() {
+    const treeName = prompt('Enter a name for the tree:');
+    if (treeName && treeData) {
+        history.push({ name: treeName, data: treeData });
+        localStorage.setItem('treeHistory', JSON.stringify(history));
+        showNotification('Tree saved successfully!');
+        updateHistoryDropdown();
+    } else {
+        showNotification('No tree data available to save or name is empty.');
+    }
+}
+
+// Load Tree function
+function loadTree() {
+    const selectedName = document.getElementById('historyDropdown').value;
+    const tree = history.find(h => h.name === selectedName);
+    if (tree) {
+        treeData = tree.data;
+        nodeValues = extractNodeValues(treeData);
+        renderTree();
+        updateStatistics();
+        showNotification('Tree loaded successfully!');
+    } else {
+        showNotification('No saved tree found.');
+    }
+}
+
+
+function extractNodeValues(node, values = []) {
+    if (node) {
+        values.push({ label: node.label, value: node.value });
+        extractNodeValues(node.left, values);
+        extractNodeValues(node.right, values);
+    }
+    return values;
 }
 
 function buildTree(values) {
@@ -54,13 +122,6 @@ function buildTree(values) {
     }
 
     return buildBalancedBST(0, values.length - 1);
-}
-
-function checkNodeStructure(node) {
-    if (!node) return;
-    console.log('Node:', node.value, 'Left:', node.left, 'Right:', node.right);
-    checkNodeStructure(node.left);
-    checkNodeStructure(node.right);
 }
 
 function traverseTree(stepByStep = false) {
@@ -232,4 +293,15 @@ function analyzeSubtree() {
     } else {
         document.getElementById('subtreeWarning').classList.remove('hidden');
     }
+}
+
+function updateHistoryDropdown() {
+    const historyDropdown = document.getElementById('historyDropdown');
+    historyDropdown.innerHTML = '<option value="">Select Tree</option>';
+    history.forEach(h => {
+        const option = document.createElement('option');
+        option.value = h.name;
+        option.textContent = h.name;
+        historyDropdown.appendChild(option);
+    });
 }
